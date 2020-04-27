@@ -147,7 +147,7 @@ def poetry_publish(package_root, version, log_filename='publish.log', creole_rea
         verbose_check_call(*args)
 
     print('\ngit tag version')
-    verbose_check_call('git', 'tag', git_tag)
+    verbose_check_call('git', 'tag', '-a', git_tag, '-m', f"publishing version {version}")
 
     print('\ngit push tag to server')
     verbose_check_call('git', 'push', '--tags')
