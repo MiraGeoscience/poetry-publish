@@ -44,30 +44,43 @@ def poetry_publish(package_root, version, log_filename='publish.log', creole_rea
     if creole_readme:
         update_rst_readme(package_root=package_root, filename='README.creole')
 
+    # ------------------------------------------------------------------------
+
     for key in ('dev', 'rc'):
         if key in version:
             confirm(f'WARNING: Version contains {key!r}: v{version}\n')
             break
 
+    # ------------------------------------------------------------------------
+
     print('\nCheck if we are on "master" branch:')
     call_info, output = verbose_check_output('git', 'branch', '--no-color')
     print(f'\t{call_info}')
-    branch = None
+    current_branch = None
+    all_branches = set()
     for line in output.splitlines():
-        if line.startswith('* '):
-            branch = line.split(' ', 1)[1]
-            break
-    if branch is None:
+        branch = line.strip()
+        if branch:
+            if branch.startswith('* '):
+                branch = branch.split(' ', 1)[1]
+                current_branch = branch
+            all_branches.add(branch)
+
+    if current_branch is None:
         print(f'ERROR get git branch from: {output!r}')
         sys.exit(4)
 
-    if branch == 'master':
+    if current_branch in ('main', 'master'):
         print('OK')
     else:
-        confirm(f'\nNOTE: It seems you are not on "master":\n{output}')
+        confirm(f'\nNOTE: It seems you are not on "main" or "master":\n{output}')
+
+    # ------------------------------------------------------------------------
 
     print(f'\nSet version in "pyproject.toml" to: v{version}')
     verbose_check_call('poetry', 'version', version)
+
+    # ------------------------------------------------------------------------
 
     print('\ncheck if if git repro is clean:')
     call_info, output = verbose_check_output('git', 'status', '--porcelain')
@@ -79,17 +92,32 @@ def poetry_publish(package_root, version, log_filename='publish.log', creole_rea
         print(output)
         sys.exit(1)
 
+    # ------------------------------------------------------------------------
+
     print('\nRun "poetry check":')
     call_info, output = verbose_check_output('poetry', 'check')
     if 'All set!' not in output:
         print(output)
-        confirm('Check failed!')
+        confirm('Poetry check failed!')
     else:
         print('OK')
 
+    # ------------------------------------------------------------------------
+
     print('\ncheck if pull is needed')
     verbose_check_call('git', 'fetch', '--all')
-    call_info, output = verbose_check_output('git', 'log', 'HEAD..origin/master', '--oneline')
+    main_branch = None
+    for branch_name in ('main', 'master'):
+        if branch_name in all_branches:
+            main_branch = branch_name
+            break
+    if not main_branch:
+        print(f'ERROR Did not find the "main" git branch in: {all_branches}')
+        sys.exit(4)
+
+    call_info, output = verbose_check_output(
+        'git', 'log', f'HEAD..origin/{main_branch}', '--oneline'
+    )
     print(f'\t{call_info}')
     if output == '':
         print('OK')
@@ -97,7 +125,9 @@ def poetry_publish(package_root, version, log_filename='publish.log', creole_rea
         print('\n *** ERROR: git repro is not up-to-date:')
         print(output)
         sys.exit(2)
-    verbose_check_call('git', 'push', 'origin', branch)
+    verbose_check_call('git', 'push', 'origin', current_branch)
+
+    # ------------------------------------------------------------------------
 
     print('\nCleanup old builds:')
 
@@ -108,6 +138,8 @@ def poetry_publish(package_root, version, log_filename='publish.log', creole_rea
             shutil.rmtree(path)
     rmtree('./dist')
     rmtree('./build')
+
+    # ------------------------------------------------------------------------
 
     print('\nbuild but do not upload...')
 
@@ -122,6 +154,27 @@ def poetry_publish(package_root, version, log_filename='publish.log', creole_rea
 
     print(f'Build log file is here: {log_filename!r}')
 
+    # ------------------------------------------------------------------------
+
+    print('\nRun "twine check":')
+    call_info, output = verbose_check_output('poetry', 'run', 'twine', 'check', 'dist/*.*')
+    print(f'\t{call_info}')
+    checks = []
+    for line in output.splitlines():
+        if line.endswith('PASSED'):
+            print(f'\t{line}')
+            checks.append(True)
+        else:
+            print(f'ERROR: {line}')
+            checks.append(False)
+
+    if True not in checks or False in checks:
+        confirm('Twine check failed!')
+    else:
+        print('OK')
+
+    # ------------------------------------------------------------------------
+
     git_tag = f'v{version}'
 
     print('\ncheck git tag')
@@ -132,6 +185,8 @@ def poetry_publish(package_root, version, log_filename='publish.log', creole_rea
         sys.exit(3)
     else:
         print('OK')
+
+    # ------------------------------------------------------------------------
 
     print('\nUpload to PyPi via poetry:')
     args = ['poetry', 'publish'] + sys.argv[1:]
@@ -145,8 +200,12 @@ def poetry_publish(package_root, version, log_filename='publish.log', creole_rea
         args = ['poetry', 'run', 'twine', 'upload', 'dist/*.*'] + sys.argv[1:]
         verbose_check_call(*args)
 
+    # ------------------------------------------------------------------------
+
     print('\ngit tag version')
     verbose_check_call('git', 'tag', '-a', git_tag, '-m', f"publishing version {version}")
+
+    # ------------------------------------------------------------------------
 
     print('\ngit push tag to server')
     verbose_check_call('git', 'push', '--tags')

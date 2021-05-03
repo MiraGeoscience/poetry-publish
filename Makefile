@@ -28,15 +28,19 @@ install-poetry: ## install or update poetry
 install: check-poetry ## install python-poetry_publish via poetry
 	poetry install
 
+update: check-poetry ## Update the dependencies as according to the pyproject.toml file
+	poetry update
+
 lint: ## Run code formatters and linter
-	poetry run flynt --fail-on-change --line_length=${MAX_LINE_LENGTH} poetry_publish
-	poetry run isort --check-only --recursive poetry_publish
-	poetry run flake8 poetry_publish
+	poetry run flynt --fail-on-change --line_length=${MAX_LINE_LENGTH} .
+	poetry run isort --check-only .
+	poetry run flake8 .
 
 fix-code-style: ## Fix code formatting
-	poetry run flynt --line_length=${MAX_LINE_LENGTH} poetry_publish
-	poetry run isort --apply --recursive poetry_publish
-	poetry run autopep8 --ignore-local-config --max-line-length=${MAX_LINE_LENGTH} --aggressive --aggressive --in-place --recursive poetry_publish
+	poetry run flynt --line_length=${MAX_LINE_LENGTH} .
+	poetry run pyupgrade --exit-zero-even-if-changed --py3-plus --py36-plus --py37-plus `find . -name "*.py" -type f -not -path "./.tox/*"`
+	poetry run isort .
+	poetry run autopep8 --aggressive --aggressive --in-place --recursive .
 
 tox-listenvs: check-poetry ## List all tox test environments
 	poetry run tox --listenvs
@@ -52,6 +56,9 @@ tox-py37: check-poetry ## Run pytest via tox with *python v3.7*
 
 tox-py38: check-poetry ## Run pytest via tox with *python v3.8*
 	poetry run tox -e py38
+
+tox-py39: check-poetry ## Run pytest via tox with *python v3.9*
+	poetry run tox -e py39
 
 pytest: check-poetry ## Run pytest
 	poetry run pytest

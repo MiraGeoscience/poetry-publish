@@ -8,7 +8,7 @@ Helper to build and upload a project that used poetry to PyPi, with prechecks:
 
     * If ``__version__`` contains 'dev' or 'rc'
 
-    * If git repository is not on ``master``
+    * If git repository is not on ``main`` or ``master``
 
 * Abort publish if git repository contains changes
 
@@ -16,9 +16,11 @@ Helper to build and upload a project that used poetry to PyPi, with prechecks:
 
 * Abort if ``poetry check`` fails
 
+* Abort if ``twine check`` fails
+
 * Abort if git version tag already exists
 
-After a successfull upload to PyPi:
+After a successful upload to PyPi:
 
 * create a git version tag
 
@@ -26,7 +28,7 @@ After a successfull upload to PyPi:
 
 Compatible Python Versions (see `tox.ini <https://github.com/jedie/poetry-publish/blob/master/tox.ini>`_ or `.travis.yml <https://github.com/jedie/poetry-publish/blob/master/.travis.yml>`_):
 
-* 3.8, 3.7, 3.6
+* 3.9, 3.8, 3.7, 3.6
 
 * PyPy3
 
@@ -193,7 +195,8 @@ To see all make targets, just call ``make``:
     ~/poetry-publish$ make
     help                 List all commands
     install-poetry       install or update poetry
-    install              install poetry-publish via poetry
+    install              install python-poetry_publish via poetry
+    update               Update the dependencies as according to the pyproject.toml file
     lint                 Run code formatters and linter
     fix-code-style       Fix code formatting
     tox-listenvs         List all tox test environments
@@ -201,6 +204,7 @@ To see all make targets, just call ``make``:
     tox-py36             Run pytest via tox with *python v3.6*
     tox-py37             Run pytest via tox with *python v3.7*
     tox-py38             Run pytest via tox with *python v3.8*
+    tox-py39             Run pytest via tox with *python v3.9*
     pytest               Run pytest
     update-rst-readme    update README.rst from README.creole
     publish              Release new version to PyPi
@@ -209,9 +213,35 @@ To see all make targets, just call ``make``:
 history
 =======
 
-* *dev* - `compare v0.3.1...master <https://github.com/jedie/poetry-publish/compare/v0.3.1...master>`_ 
+* *dev* - `compare v0.4.1...master <https://github.com/jedie/poetry-publish/compare/v0.4.1...master>`_ 
 
     * TBC
+
+* v0.4.1 - 2021-03-19 - `compare v0.4.0...v0.4.1 <https://github.com/jedie/poetry-publish/compare/v0.4.0...v0.4.1>`_ 
+
+    * Bugfix if git ``main`` branch is used, instead of ``master``
+
+* v0.4.0 - 2020-10-17 - `compare v0.3.2...v0.4.0 <https://github.com/jedie/poetry-publish/compare/v0.3.2...v0.4.0>`_ 
+
+    * Call ``twine check dist/*.*``, too.
+
+    * Some meta updates to project setup
+
+* v0.3.2 - 2020-10-16 - `compare v0.3.1...v0.3.2 <https://github.com/jedie/poetry-publish/compare/v0.3.1...v0.3.2>`_ 
+
+    * Create git annotated tags instead of a lightweight tag. `Contributed by sebhmg in #9 <https://github.com/jedie/poetry-publish/issues/9>`_
+
+    * Make ``python-creole`` to an optional dependency. Based on a contribution by sebhmg
+
+    * Allow ``main`` beside ``master`` as stable branch.
+
+    * Add ``make update``
+
+    * Update ``pytest.ini``
+
+    * Change supported Python version in ``pyproject.toml``
+
+    * Run tests with Python 3.9, too
 
 * v0.3.1 - 2020-02-19 - `compare v0.3.0...v0.3.1 <https://github.com/jedie/poetry-publish/compare/v0.3.0...v0.3.1>`_ 
 
@@ -284,4 +314,4 @@ donation
 
 ------------
 
-``Note: this file is generated from README.creole 2020-02-19 10:02:53 with "python-creole"``
+``Note: this file is generated from README.creole 2021-03-19 09:14:09 with "python-creole"``
